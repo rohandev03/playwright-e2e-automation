@@ -1,0 +1,34 @@
+{
+  "name": "playwright-e2e-automation",
+  "version": "1.0.0",
+  "description": "Repositorio de automatización robusto con Playwright, TypeScript y K6",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" \"tests/**/*.ts\" --fix",
+    "typecheck": "tsc --noEmit",
+    "security:scan": "npm audit --audit-level=high",
+    "test": "playwright test",
+    "test:ui": "playwright test --project=chromium --project=firefox --project=webkit",
+    "test:unit": "playwright test tests/unit/",
+    "test:pr": "playwright test tests/unit/ tests/smoke.spec.ts",
+    "test:api": "playwright test tests/api/",
+    "test:functional": "playwright test tests/ui/functional.spec.ts",
+    "test:integration": "playwright test tests/ui/integration.spec.ts",
+    "test:hybrid": "playwright test tests/hybrid/",
+    "test:accessibility": "playwright test tests/ui/accessibility.spec.ts"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.9.1",
+    "@playwright/test": "^1.44.0",
+    "@types/node": "^20.12.12",
+    "@typescript-eslint/eslint-plugin": "^7.10.0",
+    "@typescript-eslint/parser": "^7.10.0",
+    "dotenv": "^16.4.5",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5"
+  }
+}

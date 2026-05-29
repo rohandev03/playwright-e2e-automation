@@ -1,0 +1,40 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  validate:
+    name: Lint, Typecheck, Security & PR Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Quality Gate - Code Linting (ESLint)
+        run: npm run lint
+
+      - name: Quality Gate - TypeScript Typecheck
+        run: npm run typecheck
+
+      - name: Quality Gate - Security Audit (NPM Audit)
+        run: npm run security:scan
+
+      - name: Install Playwright Browsers and System Dependencies
+        run: npx playwright install --with-deps
+
+      - name: Run Unit and Smoke Tests
+        run: npm run test:pr

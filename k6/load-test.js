@@ -1,6 +1,6 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { API_URL, TEST_USER_EMAIL, TEST_USER_PASSWORD, thresholdsConfig } from './config.js';
+import { API_URL, authenticateUser, thresholdsConfig } from './config.js';
 
 /**
  * NOTA EXPLICATIVA:
@@ -28,24 +28,7 @@ export const options = {
  * Inicia sesión vía API y expone el token de sesión a todos los usuarios virtuales (VUs).
  */
 export function setup() {
-  const loginUrl = `${API_URL}/users/login`;
-  const payload = JSON.stringify({
-    user: { email: TEST_USER_EMAIL, password: TEST_USER_PASSWORD }
-  });
-  const headers = { 'Content-Type': 'application/json' };
-
-  const res = http.post(loginUrl, payload, { headers });
-
-  // Verificación básica del setup
-  check(res, {
-    'Setup: Login completado con éxito (200)': (r) => r.status === 200,
-  });
-
-  const body = res.json();
-  const token = body && body.user ? body.user.token : '';
-
-  // Lo que se retorna aquí pasa como argumento al bloque default()
-  return { token };
+  return authenticateUser();
 }
 
 /**

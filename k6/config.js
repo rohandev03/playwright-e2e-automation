@@ -67,7 +67,7 @@ export function authenticateUser() {
     // eslint-disable-next-line no-console
     console.warn('Advertencia: Las credenciales estáticas fallaron. Intentando registro de usuario temporal (Fallback)...');
     
-    const uniqueId = Math.floor(Math.random() * 100000000);
+    const uniqueId = `${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
     const uniqueUsername = `${TEST_USER_USERNAME}_${uniqueId}`;
     const uniqueEmail = `qa_test_user_${uniqueId}@mailinator.com`;
     const uniquePayload = JSON.stringify({

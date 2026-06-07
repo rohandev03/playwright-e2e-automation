@@ -48,20 +48,48 @@ export function authenticateUser() {
     const body = res.json();
     token = body && body.user ? body.user.token : '';
   } else {
-    // 2. Si ya existe (422) o falla por otra razón, intentamos login directo
+    // 2. Si ya existe (422) o falla por otra razón, intentamos login directo con las credenciales estáticas
     const loginUrl = `${API_URL}/users/login`;
     const loginPayload = JSON.stringify({
       user: { email: TEST_USER_EMAIL, password: TEST_USER_PASSWORD }
     });
     res = http.post(loginUrl, loginPayload, { headers });
 
-    check(res, {
-      'Setup: Login completado con éxito (200)': (r) => r.status === 200,
+    if (res.status === 200) {
+      const body = res.json();
+      token = body && body.user ? body.user.token : '';
+    }
+  }
+
+  // 3. Estrategia de Fallback Dinámico: Si falló tanto el registro como el login estático,
+  // procedemos a registrar un usuario con credenciales únicas aleatorias para no detener las pruebas de carga.
+  if (!token) {
+    // eslint-disable-next-line no-console
+    console.warn('Advertencia: Las credenciales estáticas fallaron. Intentando registro de usuario temporal (Fallback)...');
+    
+    const uniqueId = `${Date.now()}_${Math.floor(Math.random() * 1e9)}`;
+    const uniqueUsername = `${TEST_USER_USERNAME}_${uniqueId}`;
+    const uniqueEmail = `qa_test_user_${uniqueId}@mailinator.com`;
+    const uniquePayload = JSON.stringify({
+      user: {
+        username: uniqueUsername,
+        email: uniqueEmail,
+        password: TEST_USER_PASSWORD
+      }
     });
 
-    const body = res.json();
-    token = body && body.user ? body.user.token : '';
-  }
+    res = http.post(registerUrl, uniquePayload, { headers });
+
+    if (res.status === 201) {
+      const body = res.json();
+      token = body && body.user ? body.user.token : '';
+    }
+
+  // Validación final para confirmar que obtuvimos un token, garantizando que el resto del test pueda proceder
+  check(res, {
+    'Setup: Autenticación completada con éxito': () => token !== '',
+  });
 
   return { token };
 }
+

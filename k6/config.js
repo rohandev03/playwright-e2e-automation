@@ -84,6 +84,7 @@ export function authenticateUser() {
       const body = res.json();
       token = body && body.user ? body.user.token : '';
     }
+  }
 
   // Validación final para confirmar que obtuvimos un token, garantizando que el resto del test pueda proceder
   check(res, {

@@ -1,6 +1,6 @@
 import http from 'k6/http';
 import { check, sleep } from 'k6';
-import { API_URL, authenticateUser, thresholdsConfig } from './config.js';
+import { API_URL, authenticateUser, getHeaders, thresholdsConfig } from './config.js';
 
 /**
  * NOTA EXPLICATIVA:
@@ -37,10 +37,7 @@ export function setup() {
 export default function (data) {
   const feedUrl = `${API_URL}/articles?limit=10&offset=0`;
   const params = {
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Token ${data.token}`
-    }
+    headers: getHeaders(data.token)
   };
 
   const response = http.get(feedUrl, params);

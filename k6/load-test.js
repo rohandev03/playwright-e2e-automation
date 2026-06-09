@@ -9,7 +9,7 @@ import { API_URL, authenticateUser, getHeaders, thresholdsConfig } from './confi
  * Simula el comportamiento de múltiples usuarios reales que acceden
  * de forma concurrente en condiciones típicas de producción (hasta 100 usuarios virtuales).
  * Reutiliza las credenciales globales y valida que los tiempos de respuesta cumplan con
- * los umbrales exigidos (p95 < 200ms y fallos < 1%).
+ * los umbrales exigidos (p95 < 500ms y fallos < 1%).
  */
 
 export const options = {

@@ -145,13 +145,13 @@ k6 run k6/load-test.js
 ```
 
 ### 2. Prueba de Estrés (Stress Test)
-Aumenta la carga progresivamente hasta 50 usuarios para identificar el límite de quiebre.
+Aumenta la carga progresivamente hasta 55 usuarios para identificar el límite de quiebre.
 ```bash
 k6 run k6/stress-test.js
 ```
 
 ### 3. Pruebas de Picos (Spike Test)
-Provoca un pico repentino y masivo de 80 usuarios concurrentes en segundos para validar la autorrecuperación.
+Provoca un pico repentino y masivo de 40 usuarios concurrentes en segundos para validar la autorrecuperación.
 ```bash
 k6 run k6/spike-test.js
 ```

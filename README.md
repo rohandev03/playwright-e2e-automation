@@ -145,7 +145,7 @@ k6 run k6/load-test.js
 ```
 
 ### 2. Prueba de Estrés (Stress Test)
-Aumenta la carga progresivamente hasta 50 usuarios para identificar el límite de quiebre.
+Aumenta la carga progresivamente hasta 55 usuarios para identificar el límite de quiebre.
 ```bash
 k6 run k6/stress-test.js
 ```

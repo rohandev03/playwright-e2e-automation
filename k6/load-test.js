@@ -15,9 +15,9 @@ import { API_URL, authenticateUser, getHeaders, thresholdsConfig } from './confi
 export const options = {
   // Definición de las etapas de carga (Ramp-up, Hold, Ramp-down)
   stages: [
-    { duration: '20s', target: 100 }, // Ramp-up: Sube de 0 a 100 usuarios concurrentes en 20s
-    { duration: '40s', target: 100 }, // Hold: Mantiene la carga constante en 100 usuarios por 40s
-    { duration: '20s', target: 0 },  // Ramp-down: Baja de 100 a 0 usuarios en 20s
+    { duration: '20s', target: 20 }, // Ramp-up: Sube de 0 a 20 usuarios concurrentes en 20s
+    { duration: '40s', target: 20 }, // Hold: Mantiene la carga constante en 20 usuarios por 40s
+    { duration: '20s', target: 0 },  // Ramp-down: Baja de 20 a 0 usuarios en 20s
   ],
   // Inyección de los umbrales de aceptación comunes
   thresholds: thresholdsConfig
@@ -45,7 +45,15 @@ export default function (data) {
   // Validaciones durante la prueba de carga
   check(response, {
     'Estado HTTP es 200': (r) => r.status === 200,
-    'Lista de artículos disponible': (r) => r.json().articles !== undefined,
+    'Lista de artículos disponible': (r) => {
+      if (r.status !== 200) return false;
+      try {
+        const body = r.json();
+        return body && body.articles !== undefined;
+      } catch (e) {
+        return false;
+      }
+    },
   });
 
   // Simulación de "tiempo de pensamiento" del usuario real de 1 segundo

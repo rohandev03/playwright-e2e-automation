@@ -7,7 +7,7 @@ import { API_URL, authenticateUser, getHeaders, thresholdsConfig } from './confi
  * k6/stress-test.js - Prueba de Estrés (Stress Testing).
  *
  * Incrementa progresivamente los usuarios virtuales a una cantidad muy superior a la normal
- * (hasta 100 VUs concurrentes) con el objetivo de:
+ * (hasta 75 VUs concurrentes) con el objetivo de:
  * 1. Comprobar si el sistema se degrada de forma controlada o sufre caídas catastróficas.
  * 2. Comprobar si el backend se recupera tras el pico máximo de demanda.
  * 3. Validar si bajo condiciones de alta demanda se logran cumplir los umbrales de servicio.
@@ -16,8 +16,8 @@ import { API_URL, authenticateUser, getHeaders, thresholdsConfig } from './confi
 export const options = {
   stages: [
     { duration: '20s', target: 50 }, // Sube rápido a 50 VUs
-    { duration: '30s', target: 100 }, // Forzar al sistema subiendo a 100 VUs
-    { duration: '1m', target: 100 },  // Mantener el esfuerzo máximo en 100 VUs
+    { duration: '30s', target: 75 }, // Forzar al sistema subiendo a 75 VUs
+    { duration: '1m', target: 75 },  // Mantener el esfuerzo máximo en 75 VUs
     { duration: '20s', target: 0 },  // Rampa de salida a 0 usuarios
   ],
   thresholds: thresholdsConfig

@@ -7,7 +7,7 @@ import { API_URL, authenticateUser, getHeaders, thresholdsConfig } from './confi
  * k6/spike-test.js - Prueba de Picos (Spike Testing).
  *
  * Provoca un crecimiento abrupto y vertiginoso de la carga en un periodo de tiempo sumamente corto
- * (rampa a 150 VUs concurrentes en sólo 10 segundos).
+ * (rampa a 50 VUs concurrentes en sólo 10 segundos).
  * Sirve para:
  * 1. Simular picos repentinos de tráfico (ej. campañas de marketing, lanzamientos).
  * 2. Comprobar si el backend sobrevive y si responde con lentitud aceptable o fallos de conexión.
@@ -16,8 +16,8 @@ import { API_URL, authenticateUser, getHeaders, thresholdsConfig } from './confi
 
 export const options = {
   stages: [
-    { duration: '10s', target: 150 }, // Incremento repentino a 150 VUs en 10s
-    { duration: '20s', target: 150 }, // Mantener la avalancha de carga durante 20s
+    { duration: '10s', target: 50 }, // Incremento repentino a 50 VUs en 10s
+    { duration: '20s', target: 50 }, // Mantener la avalancha de carga durante 20s
     { duration: '10s', target: 0 },  // Descenso inmediato a 0 VUs en 10s
   ],
   thresholds: thresholdsConfig

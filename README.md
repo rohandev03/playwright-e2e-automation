@@ -151,7 +151,7 @@ k6 run k6/stress-test.js
 ```
 
 ### 3. Pruebas de Picos (Spike Test)
-Provoca un pico repentino y masivo de 80 usuarios concurrentes en segundos para validar la autorrecuperación.
+Provoca un pico repentino y masivo de 40 usuarios concurrentes en segundos para validar la autorrecuperación.
 ```bash
 k6 run k6/spike-test.js
 ```

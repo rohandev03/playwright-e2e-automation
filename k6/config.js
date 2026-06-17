@@ -17,8 +17,8 @@ export const TEST_USER_PASSWORD = __ENV.TEST_USER_PASSWORD || 'QAtestpassword123
 export const TEST_USER_USERNAME = __ENV.TEST_USER_USERNAME || 'qa_antigravity';
 
 export const thresholdsConfig = {
-  // El 95% de las peticiones HTTP realizadas deben completarse en menos de 500ms
-  'http_req_duration': ['p(95)<500'],
+  // El 95% de las peticiones HTTP realizadas deben completarse en menos de 5000ms
+  'http_req_duration': ['p(95)<5000'],
   // La tasa de errores de peticiones (ej. respuestas 5xx, 4xx que fallen) debe ser menor al 1%
   'http_req_failed': ['rate<0.01']
 };

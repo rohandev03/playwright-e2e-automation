@@ -1,15 +1,13 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './base.page.js';
+import { APP_CONFIG } from '../config/env.config.js';
 
 /**
- * NOTA EXPLICATIVA:
- * src/pages/article.page.ts - Page Object Model para la visualización detallada de un Artículo.
+ * Page Object Model para la visualización detallada de un Artículo.
  *
- * Encapsula la lectura del contenido del artículo (título y cuerpo), la interacción con la sección
- * de comentarios (publicar y leer comentarios), y las opciones de eliminación.
+ * Encapsula la lectura del contenido del artículo, comentarios y eliminación.
  */
 export class ArticlePage extends BasePage {
-  // Localizadores del artículo y sus comentarios
   public readonly articleTitle: Locator;
   public readonly articleBody: Locator;
   public readonly commentTextArea: Locator;
@@ -23,14 +21,21 @@ export class ArticlePage extends BasePage {
 
     this.articleTitle = this.page.locator('.article-page h1');
     this.articleBody = this.page.locator('.article-content p');
-    this.commentTextArea = this.page.locator('.comment-form textarea');
-    this.postCommentButton = this.page.locator('.comment-form button[type="submit"]');
+    this.commentTextArea = this.page.getByPlaceholder('Write a comment...');
+    this.postCommentButton = this.page.getByRole('button', { name: 'Post Comment' });
     this.commentCards = this.page.locator('.card:has(.card-block)');
     this.commentTexts = this.page.locator('.card-block .card-text');
-    // Selector para borrar artículo, disponible sólo para el creador
     this.deleteArticleButton = this.page
-      .locator('button.btn-outline-danger:has-text("Delete Article")')
+      .getByRole('button', { name: 'Delete Article' })
+      .or(this.page.locator('button.btn-outline-danger:has-text("Delete Article")'))
       .first();
+  }
+
+  /**
+   * Navega a un artículo específico por su slug.
+   */
+  async navigateToArticle(slug: string): Promise<void> {
+    await this.navigateTo(APP_CONFIG.routes.article(slug));
   }
 
   /**
@@ -48,13 +53,13 @@ export class ArticlePage extends BasePage {
   async getComments(): Promise<string[]> {
     await this.commentTexts
       .first()
-      .waitFor({ state: 'visible', timeout: 5000 })
+      .waitFor({ state: 'visible', timeout: APP_CONFIG.timeouts.short })
       .catch(() => {});
     return this.commentTexts.allInnerTexts();
   }
 
   /**
-   * Borra el artículo actual (haciendo click en el botón correspondiente).
+   * Borra el artículo actual haciendo click en el botón correspondiente.
    */
   async deleteArticle(): Promise<void> {
     await this.deleteArticleButton.click();

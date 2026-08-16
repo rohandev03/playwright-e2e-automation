@@ -30,14 +30,13 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
 
   // Número de hilos (workers) ejecutándose de manera simultánea.
-  // En CI fijamos un límite controlado de 4 workers para no saturar el servidor Jenkins.
-  workers: process.env.CI ? 4 : undefined,
+  workers: 4,
 
   // Configuración de reportes generados tras la ejecución.
   // Generamos un reporte HTML completo para visualización interactiva y un archivo JUnit XML para Jenkins.
   reporter: [
     ['html', { open: 'never', outputFolder: 'playwright-report' }],
-    ['junit', { outputFile: 'playwright-report/results.xml' }]
+    ['junit', { outputFile: 'playwright-report/results.xml' }],
   ],
 
   // Configuración compartida para todos los proyectos (navegadores).

@@ -7,19 +7,19 @@
  * El uso de utilidades ayuda a mantener el código DRY (Don't Repeat Yourself).
  */
 
-export interface TestUser {
-  username: string;
-  email: string;
-  password: string;
-}
+import type { TestUser } from '../models/user.model.js';
+export type { TestUser } from '../models/user.model.js';
 
 /**
  * Genera un usuario aleatorio único basado en timestamp.
  * Esto evita colisiones de nombres o correos al registrar cuentas en una aplicación pública de pruebas.
  */
 export function generateRandomUser(): TestUser {
-  // Usamos los últimos 10 dígitos del timestamp para garantizar unicidad y mantenernos bajo el límite de 20 caracteres del backend.
-  const shortId = Date.now().toString().slice(-10);
+  // Combinamos los últimos 6 dígitos del timestamp con 4 dígitos aleatorios para evitar colisiones entre workers simultáneos (< 20 caracteres)
+  const randomSuffix = Math.floor(Math.random() * 10000)
+    .toString()
+    .padStart(4, '0');
+  const shortId = `${Date.now().toString().slice(-6)}${randomSuffix}`;
   return {
     username: `qa_${shortId}`,
     email: `qa_${shortId}@example.com`,

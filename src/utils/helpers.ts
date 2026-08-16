@@ -7,8 +7,8 @@
  * El uso de utilidades ayuda a mantener el código DRY (Don't Repeat Yourself).
  */
 
-import { TestUser } from '../models/user.model.js';
-export { TestUser };
+import type { TestUser } from '../models/user.model.js';
+export type { TestUser } from '../models/user.model.js';
 
 /**
  * Genera un usuario aleatorio único basado en timestamp.

@@ -1,15 +1,14 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './base.page.js';
+import { APP_CONFIG } from '../config/env.config.js';
+import { ArticlePayload } from '../models/article.model.js';
 
 /**
- * NOTA EXPLICATIVA:
- * src/pages/editor.page.ts - Page Object Model para la creación de Artículos.
+ * Page Object Model para la creación y edición de Artículos.
  *
- * Encapsula la interacción con los campos del formulario para publicar o editar artículos.
- * Cumple con el estándar DRY y encapsulamiento estricto de selectores.
+ * Encapsula la interacción con los campos del formulario para publicar artículos.
  */
 export class EditorPage extends BasePage {
-  // Localizadores específicos del formulario
   public readonly titleInput: Locator;
   public readonly descriptionInput: Locator;
   public readonly bodyInput: Locator;
@@ -19,42 +18,51 @@ export class EditorPage extends BasePage {
   constructor(page: Page) {
     super(page);
 
-    this.titleInput = this.page.locator('input[placeholder="Article Title"], input[name="title"]');
-    this.descriptionInput = this.page.locator('input[placeholder="What\'s this article about?"]');
-    this.bodyInput = this.page.locator('textarea[placeholder="Write your article (in markdown)"]');
-    this.tagsInput = this.page.locator('input[placeholder="Enter tags"]');
-    this.publishButton = this.page.locator(
-      'button:has-text("Publish Article"), button[type="button"]',
-    );
+    this.titleInput = this.page
+      .getByPlaceholder('Article Title')
+      .or(this.page.locator('input[name="title"]'));
+    this.descriptionInput = this.page.getByPlaceholder("What's this article about?");
+    this.bodyInput = this.page.getByPlaceholder('Write your article (in markdown)');
+    this.tagsInput = this.page.getByPlaceholder('Enter tags');
+    this.publishButton = this.page
+      .getByRole('button', { name: 'Publish Article' })
+      .or(this.page.locator('button[type="button"]'));
   }
 
   /**
    * Navega explícitamente al editor de artículos.
    */
   async navigate(): Promise<void> {
-    await this.navigateTo('/editor');
+    await this.navigateTo(APP_CONFIG.routes.editor);
   }
 
   /**
    * Completa y envía el formulario para crear un artículo.
-   * @param title Título del artículo
-   * @param description Breve descripción de qué trata
-   * @param body Contenido del artículo
-   * @param tags Listado de etiquetas asociadas (opcional)
    */
+  async createArticle(payload: ArticlePayload): Promise<void>;
   async createArticle(
     title: string,
     description: string,
     body: string,
     tags?: string[],
+  ): Promise<void>;
+  async createArticle(
+    titleOrPayload: string | ArticlePayload,
+    description?: string,
+    body?: string,
+    tags?: string[],
   ): Promise<void> {
-    await this.titleInput.fill(title);
-    await this.descriptionInput.fill(description);
-    await this.bodyInput.fill(body);
+    const payload: ArticlePayload =
+      typeof titleOrPayload === 'string'
+        ? { title: titleOrPayload, description: description || '', body: body || '', tagList: tags }
+        : titleOrPayload;
 
-    // Playwright permite presionar Enter para agregar etiquetas una a una
-    if (tags) {
-      for (const tag of tags) {
+    await this.titleInput.fill(payload.title);
+    await this.descriptionInput.fill(payload.description);
+    await this.bodyInput.fill(payload.body);
+
+    if (payload.tagList && payload.tagList.length > 0) {
+      for (const tag of payload.tagList) {
         await this.tagsInput.fill(tag);
         await this.tagsInput.press('Enter');
       }

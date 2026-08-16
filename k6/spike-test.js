@@ -1,49 +1,23 @@
-import http from 'k6/http';
-import { check, sleep } from 'k6';
-import { API_URL, authenticateUser, getHeaders, thresholdsConfig } from './config.js';
+import { authenticateUser, thresholdsConfig, simulateArticleFeed } from './config.js';
 
 /**
- * NOTA EXPLICATIVA:
  * k6/spike-test.js - Prueba de Picos (Spike Testing).
  *
- * Provoca un crecimiento abrupto y vertiginoso de la carga en un periodo de tiempo sumamente corto
- * (rampa a 40 VUs concurrentes en sólo 10 segundos).
- * Sirve para:
- * 1. Simular picos repentinos de tráfico (ej. campañas de marketing, lanzamientos).
- * 2. Comprobar si el backend sobrevive y si responde con lentitud aceptable o fallos de conexión.
- * 3. Evaluar la capacidad de autorecuperación del servidor cuando la carga desciende igual de rápido.
+ * Provoca un crecimiento abrupto y vertiginoso de carga (40 VUs en 10s).
  */
-
 export const options = {
   stages: [
-    { duration: '10s', target: 40 }, // Incremento repentino a 40 VUs en 10s
-    { duration: '20s', target: 40 }, // Mantener la avalancha de carga durante 20s
+    { duration: '10s', target: 40 }, // Incremento a 40 VUs en 10s
+    { duration: '20s', target: 40 }, // Mantener 40 VUs por 20s
     { duration: '10s', target: 0 },  // Descenso inmediato a 0 VUs en 10s
   ],
-  thresholds: thresholdsConfig
+  thresholds: thresholdsConfig,
 };
 
-/**
- * Autenticación inicial y generación del token JWT.
- */
 export function setup() {
   return authenticateUser();
 }
 
-/**
- * Iteración de cada usuario virtual.
- */
 export default function (data) {
-  const feedUrl = `${API_URL}/articles?limit=10&offset=0`;
-  const params = {
-    headers: getHeaders(data.token)
-  };
-
-  const response = http.get(feedUrl, params);
-
-  check(response, {
-    'Estado HTTP es 200': (r) => r.status === 200,
-  });
-
-  sleep(1);
+  simulateArticleFeed(data);
 }

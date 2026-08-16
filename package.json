@@ -16,7 +16,9 @@
     "test:functional": "playwright test tests/ui/functional.spec.ts",
     "test:integration": "playwright test tests/ui/integration.spec.ts",
     "test:hybrid": "playwright test tests/hybrid/",
-    "test:accessibility": "playwright test tests/ui/accessibility.spec.ts"
+    "test:accessibility": "playwright test tests/ui/accessibility.spec.ts",
+    "test:performance": "playwright test tests/ui/performance.spec.ts",
+    "test:smoke": "playwright test tests/smoke.spec.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.9.1",

@@ -1,49 +1,24 @@
-import http from 'k6/http';
-import { check, sleep } from 'k6';
-import { API_URL, authenticateUser, getHeaders, thresholdsConfig } from './config.js';
+import { authenticateUser, thresholdsConfig, simulateArticleFeed } from './config.js';
 
 /**
- * NOTA EXPLICATIVA:
  * k6/stress-test.js - Prueba de Estrés (Stress Testing).
  *
- * Incrementa progresivamente los usuarios virtuales a una cantidad muy superior a la normal
- * (hasta 55 VUs concurrentes) con el objetivo de:
- * 1. Comprobar si el sistema se degrada de forma controlada o sufre caídas catastróficas.
- * 2. Comprobar si el backend se recupera tras el pico máximo de demanda.
- * 3. Validar si bajo condiciones de alta demanda se logran cumplir los umbrales de servicio.
+ * Incrementa progresivamente los usuarios virtuales a una cantidad muy superior a la normal (55 VUs).
  */
-
 export const options = {
   stages: [
     { duration: '20s', target: 40 }, // Sube rápido a 40 VUs
     { duration: '30s', target: 55 }, // Forzar al sistema subiendo a 55 VUs
-    { duration: '1m', target: 55 },  // Mantener el esfuerzo máximo en 55 VUs
+    { duration: '1m', target: 55 },  // Mantener esfuerzo en 55 VUs
     { duration: '20s', target: 0 },  // Rampa de salida a 0 usuarios
   ],
-  thresholds: thresholdsConfig
+  thresholds: thresholdsConfig,
 };
 
-/**
- * Autenticación inicial y generación del token JWT.
- */
 export function setup() {
   return authenticateUser();
 }
 
-/**
- * Iteración de cada usuario virtual.
- */
 export default function (data) {
-  const feedUrl = `${API_URL}/articles?limit=10&offset=0`;
-  const params = {
-    headers: getHeaders(data.token)
-  };
-
-  const response = http.get(feedUrl, params);
-
-  check(response, {
-    'Estado HTTP es 200': (r) => r.status === 200,
-  });
-
-  sleep(1);
+  simulateArticleFeed(data);
 }

@@ -1,41 +1,41 @@
-import { APIRequestContext, APIResponse } from '@playwright/test';
+import { APIResponse } from '@playwright/test';
+import { BaseApiClient } from './base.client.js';
+import { APP_CONFIG } from '../../config/env.config.js';
+import { ArticlePayload } from '../../models/article.model.js';
 
 /**
- * NOTA EXPLICATIVA:
- * src/api/clients/articles.client.ts - Cliente de API para Artículos.
- *
- * Este controlador expone métodos rápidos para crear y eliminar artículos mediante llamadas HTTP.
- * Requiere el token JWT en las cabeceras (headers) para autenticar las peticiones.
- * Se utiliza para la preparación veloz de datos antes de las pruebas UI.
+ * Cliente de API para Artículos.
+ * Hereda de BaseApiClient y gestiona endpoints de artículos aplicando DRY y tipado estricto.
  */
-export class ArticlesClient {
-  private readonly request: APIRequestContext;
-
-  constructor(request: APIRequestContext) {
-    this.request = request;
-  }
-
+export class ArticlesClient extends BaseApiClient {
   /**
    * Crea un artículo por API utilizando un token JWT.
-   * @param token Token JWT del usuario creador
-   * @param title Título del artículo
-   * @param description Breve descripción
-   * @param body Contenido en markdown
-   * @param tagList Lista de etiquetas (opcional)
+   * Soporta tanto sobrecarga por DTO/objeto como por parámetros posicionales.
    */
+  async createArticle(token: string, payload: ArticlePayload): Promise<APIResponse>;
   async createArticle(
     token: string,
     title: string,
     description: string,
     body: string,
+    tagList?: string[],
+  ): Promise<APIResponse>;
+  async createArticle(
+    token: string,
+    titleOrPayload: string | ArticlePayload,
+    description?: string,
+    body?: string,
     tagList: string[] = [],
   ): Promise<APIResponse> {
-    return this.request.post('/api/articles', {
-      headers: {
-        Authorization: `Token ${token}`,
-      },
+    const payload: ArticlePayload =
+      typeof titleOrPayload === 'string'
+        ? { title: titleOrPayload, description: description || '', body: body || '', tagList }
+        : titleOrPayload;
+
+    return this.request.post(APP_CONFIG.apiEndpoints.articles, {
+      headers: this.getAuthHeaders(token),
       data: {
-        article: { title, description, body, tagList },
+        article: payload,
       },
     });
   }
@@ -46,10 +46,8 @@ export class ArticlesClient {
    * @param slug Identificador amigable de la URL del artículo
    */
   async deleteArticle(token: string, slug: string): Promise<APIResponse> {
-    return this.request.delete(`/api/articles/${slug}`, {
-      headers: {
-        Authorization: `Token ${token}`,
-      },
+    return this.request.delete(APP_CONFIG.apiEndpoints.articleBySlug(slug), {
+      headers: this.getAuthHeaders(token),
     });
   }
 }

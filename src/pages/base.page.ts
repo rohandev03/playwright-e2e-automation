@@ -1,54 +1,73 @@
 import { Page, Locator } from '@playwright/test';
+import { NavbarComponent } from './components/navbar.component.js';
+import { APP_CONFIG } from '../config/env.config.js';
 
 /**
- * NOTA EXPLICATIVA:
- * src/pages/base.page.ts - Clase Base para Page Object Model (POM).
+ * Clase Base para Page Object Model (POM).
  *
- * De acuerdo a los estándares del repositorio (POM, DRY, sin locators inline):
- * 1. Esta clase encapsula la instancia de Playwright 'Page'.
- * 2. Define métodos y elementos comunes compartidos por todas las páginas (ej. la barra de navegación superior).
- * 3. Todas las páginas específicas extenderán de esta clase base.
- * 4. NUNCA se deben incluir selectores de texto directamente en las pruebas; siempre se definen como propiedades tipo Locator.
+ * Estándares implementados:
+ * 1. Encapsula la instancia de Playwright 'Page'.
+ * 2. Compone el componente común 'navbar' (Component Object Model).
+ * 3. Centraliza utilidades transversales como inyección de sesión y navegación con rutas centralizadas.
+ * 4. Mantiene compatibilidad retroactiva con accesos previos a la Navbar.
  */
 export class BasePage {
   protected readonly page: Page;
 
-  // Localizadores comunes de la barra de navegación superior (Navbar)
-  public readonly navHome: Locator;
-  public readonly navSignIn: Locator;
-  public readonly navSignUp: Locator;
-  public readonly navNewArticle: Locator;
-  public readonly navSettings: Locator;
-  public readonly navProfile: (username: string) => Locator;
+  // Componente de barra de navegación superior
+  public readonly navbar: NavbarComponent;
+
+  // Aliases de compatibilidad retroactiva
+  public get navHome(): Locator {
+    return this.navbar.homeLink;
+  }
+  public get navSignIn(): Locator {
+    return this.navbar.signInLink;
+  }
+  public get navSignUp(): Locator {
+    return this.navbar.signUpLink;
+  }
+  public get navNewArticle(): Locator {
+    return this.navbar.newArticleLink;
+  }
+  public get navSettings(): Locator {
+    return this.navbar.settingsLink;
+  }
+  public navProfile(username: string): Locator {
+    return this.navbar.getUserProfile(username);
+  }
 
   constructor(page: Page) {
     this.page = page;
-
-    // Inicialización de localizadores comunes utilizando buenas prácticas (selectores robustos y semánticos)
-    this.navHome = this.page.locator('.navbar-brand, a.nav-link:has-text("Home")').first();
-    this.navSignIn = this.page.locator('a.nav-link:has-text("Sign in")');
-    this.navSignUp = this.page.locator('a.nav-link:has-text("Sign up")');
-    this.navNewArticle = this.page.locator('a.nav-link:has-text("New Article")');
-    this.navSettings = this.page.locator('a.nav-link:has-text("Settings")');
-
-    // Localizador dinámico parametrizado por el nombre del usuario
-    this.navProfile = (username: string) => this.page.locator(`a.nav-link:has-text("${username}")`);
+    this.navbar = new NavbarComponent(page);
   }
 
   /**
    * Navega a una ruta específica dentro del sitio web.
-   * @param path Ruta relativa (ej. '/login')
+   * @param path Ruta relativa (ej. '/login') o absoluta
    */
   async navigateTo(path: string = ''): Promise<void> {
     await this.page.goto(path);
   }
 
   /**
-   * Espera a que la carga del navegador sea completada a nivel de red (ideal para transiciones lentas).
+   * Inyecta el token JWT en el localStorage del navegador y recarga la página para simular sesión activa.
+   * Evita flujos lentos o repetitivos de login en la UI (Bypass Auth).
+   * @param token Token JWT obtenido por API
    */
-  async waitForNetworkIdle(): Promise<void> {
-    // Usamos un timeout de 15 segundos y capturamos el posible error para evitar fallos por conexiones de red pendientes.
-    await this.page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
+  async setAuthSession(token: string): Promise<void> {
+    await this.page.goto(APP_CONFIG.routes.home);
+    await this.page.evaluate((jwt) => {
+      localStorage.setItem('jwtToken', jwt);
+    }, token);
+    await this.page.reload();
+  }
+
+  /**
+   * Espera a que la carga de la página esté estabilizada.
+   */
+  async waitForPageLoaded(): Promise<void> {
+    await this.page.waitForLoadState('domcontentloaded');
   }
 
   /**

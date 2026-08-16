@@ -1,17 +1,14 @@
 /**
- * NOTA EXPLICATIVA:
- * k6/config.js - Configuración compartida para las pruebas de rendimiento con K6.
+ * k6/config.js - Configuración compartida y helpers para pruebas de rendimiento con K6.
  *
- * Centraliza las variables de entorno (URL de la API y credenciales de prueba)
- * y define los umbrales (Thresholds) exigidos por el negocio para marcar
- * los tests de performance como exitosos o fallidos.
+ * Centraliza variables de entorno, umbrales y la lógica común de simulación de usuarios virtuales (DRY).
  */
 
 import http from 'k6/http';
-import { check } from 'k6';
+import { check, sleep } from 'k6';
 
 // Extrae variables de entorno pasadas en la ejecución de K6 (-e NOMBRE=valor) o usa valores por defecto
-export const API_URL = __ENV.API_URL || 'https://conduit.bondaracademy.com/api';
+export const API_URL = __ENV.API_URL || 'https://conduit-api.bondaracademy.com/api';
 export const TEST_USER_EMAIL = __ENV.TEST_USER_EMAIL || 'qa_antigravity@mailinator.com';
 export const TEST_USER_PASSWORD = __ENV.TEST_USER_PASSWORD || 'QAtestpassword123!';
 export const TEST_USER_USERNAME = __ENV.TEST_USER_USERNAME || 'qa_antigravity';
@@ -24,7 +21,7 @@ export const thresholdsConfig = {
 };
 
 /**
- * Retorna las cabeceras HTTP estándar simulando un navegador real para evitar bloqueos por rate limits o WAF.
+ * Retorna las cabeceras HTTP estándar simulando un navegador real para evitar bloqueos.
  */
 export function getHeaders(token) {
   const headers = {
@@ -38,72 +35,33 @@ export function getHeaders(token) {
 }
 
 /**
- * Autentica o registra al usuario de pruebas (Estrategia Self-Healing / Upsert)
- * para asegurar la disponibilidad del token antes de iniciar las pruebas de carga.
+ * Autentica al usuario de pruebas registrando un usuario temporal único por sesión de prueba.
+ * Garantiza obtención inmediata del token JWT en una sola petición limpia (201 Created).
  */
 export function authenticateUser() {
   const headers = getHeaders();
-  const loginUrl = `${API_URL}/users/login`;
   const registerUrl = `${API_URL}/users`;
-  let token = '';
-  let res;
+  const uniqueId = `${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000)}`;
+  const username = `qa_${uniqueId}`;
+  const email = `qa_${uniqueId}@mailinator.com`;
+  const password = TEST_USER_PASSWORD;
 
-  // 1. Intentamos login directo con las credenciales estáticas
-  const loginPayload = JSON.stringify({
-    user: { email: TEST_USER_EMAIL, password: TEST_USER_PASSWORD }
+  const registerPayload = JSON.stringify({
+    user: {
+      username,
+      email,
+      password,
+    },
   });
-  res = http.post(loginUrl, loginPayload, { headers });
 
-  if (res.status === 200) {
+  const res = http.post(registerUrl, registerPayload, { headers });
+  let token = '';
+
+  if (res.status === 201) {
     const body = res.json();
     token = body && body.user ? body.user.token : '';
-  } else {
-    // 2. Si el login falla (ej. la base de datos se reinició y el usuario no existe), intentamos registrar al usuario estático
-    let usernameToRegister = TEST_USER_USERNAME;
-    if (usernameToRegister.length > 20) {
-      usernameToRegister = usernameToRegister.slice(0, 20);
-    }
-    const registerPayload = JSON.stringify({
-      user: {
-        username: usernameToRegister,
-        email: TEST_USER_EMAIL,
-        password: TEST_USER_PASSWORD
-      }
-    });
-    res = http.post(registerUrl, registerPayload, { headers });
-
-    if (res.status === 201) {
-      const body = res.json();
-      token = body && body.user ? body.user.token : '';
-    }
   }
 
-  // 3. Estrategia de Fallback Dinámico: Si falló tanto el login como el registro del usuario estático,
-  // procedemos a registrar un usuario con credenciales únicas aleatorias de longitud segura (< 20 caracteres).
-  if (!token) {
-    // eslint-disable-next-line no-console
-    console.warn('Advertencia: Las credenciales estáticas fallaron. Intentando registro de usuario temporal (Fallback)...');
-
-    const uniqueId = Math.floor(Math.random() * 1000000); // 6 dígitos
-    const uniqueUsername = `usr_${uniqueId}`; // 10 caracteres (seguro, < 20)
-    const uniqueEmail = `qa_usr_${uniqueId}@mailinator.com`;
-    const uniquePayload = JSON.stringify({
-      user: {
-        username: uniqueUsername,
-        email: uniqueEmail,
-        password: TEST_USER_PASSWORD
-      }
-    });
-
-    res = http.post(registerUrl, uniquePayload, { headers });
-
-    if (res.status === 201) {
-      const body = res.json();
-      token = body && body.user ? body.user.token : '';
-    }
-  }
-
-  // Validación final para confirmar que obtuvimos un token, garantizando que el resto del test pueda proceder
   check(res, {
     'Setup: Autenticación completada con éxito': () => token !== '',
   });
@@ -111,3 +69,30 @@ export function authenticateUser() {
   return { token };
 }
 
+/**
+ * Función reutilizable que simula la interacción de un usuario virtual consultando el feed (DRY).
+ * @param {{ token: string }} data Datos retornados por el bloque setup
+ */
+export function simulateArticleFeed(data) {
+  const feedUrl = `${API_URL}/articles?limit=10&offset=0`;
+  const params = {
+    headers: getHeaders(data.token)
+  };
+
+  const response = http.get(feedUrl, params);
+
+  check(response, {
+    'Estado HTTP es 200': (r) => r.status === 200,
+    'Lista de artículos disponible': (r) => {
+      if (r.status !== 200) return false;
+      try {
+        const body = r.json();
+        return body && body.articles !== undefined;
+      } catch (e) {
+        return false;
+      }
+    },
+  });
+
+  sleep(1);
+}

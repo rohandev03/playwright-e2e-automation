@@ -1,15 +1,15 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './base.page.js';
+import { APP_CONFIG } from '../config/env.config.js';
 
 /**
- * NOTA EXPLICATIVA:
- * src/pages/home.page.ts - Page Object Model para la Home y Feeds de artículos.
+ * Page Object Model para la Home y Feeds de artículos.
  *
  * Encapsula la interacción con la lista principal de artículos, cambios entre pestañas de feed
- * (Global y Personalizado), y filtrado por etiquetas populares de la barra lateral.
+ * y obtención de etiquetas populares.
  */
 export class HomePage extends BasePage {
-  // Localizadores específicos de la Home
+  public readonly bannerHeading: Locator;
   public readonly globalFeedTab: Locator;
   public readonly yourFeedTab: Locator;
   public readonly articlePreviews: Locator;
@@ -20,9 +20,13 @@ export class HomePage extends BasePage {
   constructor(page: Page) {
     super(page);
 
-    // Mapeo de elementos dinámicos en la UI de Conduit
-    this.globalFeedTab = this.page.locator('.feed-toggle a.nav-link:has-text("Global Feed")');
-    this.yourFeedTab = this.page.locator('.feed-toggle a.nav-link:has-text("Your Feed")');
+    this.bannerHeading = this.page.locator('.banner h1');
+    this.globalFeedTab = this.page
+      .getByRole('button', { name: 'Global Feed' })
+      .or(this.page.locator('.feed-toggle a.nav-link:has-text("Global Feed")'));
+    this.yourFeedTab = this.page
+      .getByRole('button', { name: 'Your Feed' })
+      .or(this.page.locator('.feed-toggle a.nav-link:has-text("Your Feed")'));
     this.articlePreviews = this.page.locator('.article-preview');
     this.articleTitles = this.page.locator('.article-preview h1');
     this.tagList = this.page.locator('.sidebar .tag-list a');
@@ -33,7 +37,7 @@ export class HomePage extends BasePage {
    * Navega explícitamente a la Home.
    */
   async navigate(): Promise<void> {
-    await this.navigateTo('/');
+    await this.navigateTo(APP_CONFIG.routes.home);
   }
 
   /**
@@ -41,8 +45,9 @@ export class HomePage extends BasePage {
    */
   async selectGlobalFeed(): Promise<void> {
     await this.globalFeedTab.click();
-    // Esperamos a que el texto "Loading..." desaparezca para asegurar consistencia
-    await this.loadingIndicator.waitFor({ state: 'detached', timeout: 5000 }).catch(() => {});
+    await this.loadingIndicator
+      .waitFor({ state: 'detached', timeout: APP_CONFIG.timeouts.short })
+      .catch(() => {});
   }
 
   /**
@@ -51,8 +56,15 @@ export class HomePage extends BasePage {
   async getArticleTitles(): Promise<string[]> {
     await this.articleTitles
       .first()
-      .waitFor({ state: 'visible', timeout: 5000 })
+      .waitFor({ state: 'visible', timeout: APP_CONFIG.timeouts.short })
       .catch(() => {});
     return this.articleTitles.allInnerTexts();
+  }
+
+  /**
+   * Obtiene la lista de etiquetas populares visibles en la barra lateral.
+   */
+  async getTags(): Promise<string[]> {
+    return this.tagList.allInnerTexts();
   }
 }

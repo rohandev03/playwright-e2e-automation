@@ -1,29 +1,33 @@
-import { APIRequestContext, APIResponse } from '@playwright/test';
+import { APIResponse } from '@playwright/test';
+import { BaseApiClient } from './base.client.js';
+import { APP_CONFIG } from '../../config/env.config.js';
+import { UserCredentials, UserRegisterPayload } from '../../models/user.model.js';
 
 /**
- * NOTA EXPLICATIVA:
- * src/api/clients/auth.client.ts - Cliente de API para Autenticación.
- *
- * Este controlador encapsula las llamadas HTTP rápidas hacia los endpoints de usuarios (/api/users).
- * Permite autenticarse o registrar nuevos usuarios directamente de forma asíncrona,
- * facilitando la preparación rápida de datos (seeding) y el bypass de Login en pruebas UI/E2E.
+ * Cliente de API para Autenticación y Gestión de Usuarios.
+ * Hereda de BaseApiClient y utiliza rutas centralizadas y modelos fuertemente tipados.
  */
-export class AuthClient {
-  private readonly request: APIRequestContext;
-
-  constructor(request: APIRequestContext) {
-    this.request = request;
-  }
-
+export class AuthClient extends BaseApiClient {
   /**
    * Realiza una petición POST para autenticar un usuario y obtener su token JWT.
    * @param email Correo electrónico
    * @param password Contraseña
    */
-  async login(email: string, password: string): Promise<APIResponse> {
-    return this.request.post('/api/users/login', {
+  async login(email: string, password: string): Promise<APIResponse>;
+  async login(credentials: UserCredentials): Promise<APIResponse>;
+  async login(
+    emailOrCredentials: string | UserCredentials,
+    password?: string,
+  ): Promise<APIResponse> {
+    const payload =
+      typeof emailOrCredentials === 'string'
+        ? { email: emailOrCredentials, password: password || '' }
+        : emailOrCredentials;
+
+    return this.request.post(APP_CONFIG.apiEndpoints.login, {
+      headers: this.getAuthHeaders(),
       data: {
-        user: { email, password },
+        user: payload,
       },
     });
   }
@@ -34,10 +38,22 @@ export class AuthClient {
    * @param email Correo electrónico único
    * @param password Contraseña
    */
-  async register(username: string, email: string, password: string): Promise<APIResponse> {
-    return this.request.post('/api/users', {
+  async register(username: string, email: string, password: string): Promise<APIResponse>;
+  async register(payload: UserRegisterPayload): Promise<APIResponse>;
+  async register(
+    usernameOrPayload: string | UserRegisterPayload,
+    email?: string,
+    password?: string,
+  ): Promise<APIResponse> {
+    const payload =
+      typeof usernameOrPayload === 'string'
+        ? { username: usernameOrPayload, email: email || '', password: password || '' }
+        : usernameOrPayload;
+
+    return this.request.post(APP_CONFIG.apiEndpoints.users, {
+      headers: this.getAuthHeaders(),
       data: {
-        user: { username, email, password },
+        user: payload,
       },
     });
   }

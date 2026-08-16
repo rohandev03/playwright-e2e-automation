@@ -1,22 +1,16 @@
 import { test, expect } from '../../src/fixtures/test-base.js';
+import { ArticlesFeedResponse } from '../../src/models/article.model.js';
 
 /**
- * NOTA EXPLICATIVA:
  * tests/ui/integration.spec.ts - Pruebas de Integración de UI (Mocking de Red).
  *
- * Estas pruebas demuestran el aislamiento del frontend mediante el interceptado y mockeo
- * de llamadas API usando 'page.route()' de Playwright.
- * Nos permiten:
- * 1. Probar cómo reacciona la UI si el servidor falla (ej. error 500).
- * 2. Cargar listas de artículos controladas (mockeadas) de forma inmediata, sin depender
- *    del estado real de la base de datos de producción/desarrollo.
+ * Aislamiento de frontend mediante interceptación y mockeo de API con page.route() y POM.
  */
 test.describe('UI Integration Tests - Interceptación y Mocking de Peticiones', () => {
   test('Debería manejar correctamente un error 500 al cargar la lista de etiquetas', async ({
     page,
     homePage,
   }) => {
-    // Interceptamos la llamada GET a '/api/tags' y forzamos una respuesta de servidor caído (500)
     await page.route('**/api/tags', async (route) => {
       await route.fulfill({
         status: 500,
@@ -25,11 +19,9 @@ test.describe('UI Integration Tests - Interceptación y Mocking de Peticiones', 
       });
     });
 
-    // Navegar a la Home
     await homePage.navigate();
 
-    // Validamos que el lister de tags populares en el sidebar esté vacío debido al error mockeado
-    const tags = await homePage.tagList.allInnerTexts();
+    const tags = await homePage.getTags();
     expect(tags.length).toBe(0);
   });
 
@@ -37,7 +29,7 @@ test.describe('UI Integration Tests - Interceptación y Mocking de Peticiones', 
     page,
     homePage,
   }) => {
-    const mockArticlesPayload = {
+    const mockArticlesPayload: ArticlesFeedResponse = {
       articles: [
         {
           slug: 'articulo-mock-1',
@@ -60,7 +52,6 @@ test.describe('UI Integration Tests - Interceptación y Mocking de Peticiones', 
       articlesCount: 1,
     };
 
-    // Interceptamos cualquier petición que intente buscar artículos
     await page.route('**/api/articles*', async (route) => {
       await route.fulfill({
         status: 200,
@@ -69,11 +60,9 @@ test.describe('UI Integration Tests - Interceptación y Mocking de Peticiones', 
       });
     });
 
-    // Navegar y activar la pestaña de Feed Global
     await homePage.navigate();
     await homePage.selectGlobalFeed();
 
-    // Verificamos que el título renderizado en la UI sea exactamente el que mockeamos
     const titles = await homePage.getArticleTitles();
     expect(titles).toContain('Artículo de Prueba Mockeado');
   });
